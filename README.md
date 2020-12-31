@@ -1,4 +1,4 @@
-# BRFC Id Generator
+# BRFC ID Generator
 
 Web page for generating [BRFC IDs](http://bsvalias.org/01-02-brfc-id-assignment.html).
 
