@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BRFC Id Generator</title>
+  <link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/tachyons/4.11.1/tachyons.min.css"
+    integrity="sha512-d0v474klOFSF7qD9WDvyRxAvXaWSxCHDZdnBSZQjo8BpVr6vpjwAgqetpqkKP38DzlOzdVPaLVnzzW1Ba8wB9w=="
+    crossorigin="anonymous" />
+  <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.8.0/dist/alpine.min.js"
+    crossorigin="anonymous" defer></script>
+  <style>
+    body {
+      --col: #333333;
+      --bg1: #F4F4F4;
+      --bg2: #F4F4F4;
+
+      color: var(--col, #F4F4F4);
+      background-color: var(--bg1, #F4F4F4);
+      background-image: radial-gradient(circle, var(--bg1, #F4F4F4) 6rem, var(--bg2, #F4F4F4));
+      transition: all 500ms ease;
+    }
+
+    .panel {
+      background-color: rgba(255, 255, 255, 0.65);
+      box-shadow: 0 0 1rem 1px rgba(0, 0, 0, 0.1);
+    }
+
+    .input {
+      color: #222222;
+      background-color: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .input:focus {
+      box-shadow: 0 0 3px 1px rgba(150, 204, 255, 0.5);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body {
+        --col: #F4F4F4;
+        --bg1: #333333;
+        --bg2: #333333;
+      }
+
+      .panel {
+        background-color: rgba(0, 0, 0, 0.35);
+      }
+
+      .input {
+        color: #ffffff;
+        background-color: rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(0, 0, 0, 0.3);
+      }
+    }
+  </style>
+</head>
+<body class="sans-serif ph3 ph4-l">
+  <div class="flex flex-column min-vh-100 mw6 center">
+    <div class="flex flex-auto flex-column justify-center">
+      <div class="pa3 pa4-ns br4 | panel"
+        x-data="brfcGen()"
+        x-init="$watch('brfc', onChange)">
+        
+        <h1 class="mt0 mb2 f3 lh-title fw9 tracked underline">
+          BRFC<span class="fw7 o-70">gen</span>
+        </h1>
+        <p class="mt0 mb3 f7 lh-copy fw3 o-80">
+          Generate <a href="http://bsvalias.org/01-02-brfc-id-assignment.html" class="link fw6 underline white hover-hot-pink">BRFC IDs</a>
+          with <span class="fw6 tracked ttu">snazzy</span> colours just for the f<span class="fw4">*</span>ck of it.
+        </p>
+
+        <div class="mv3 mv4-l">
+          <label class="db mb2 f7 fw3 lh-block o-60"
+            for="title">
+            Title
+          </label>
+          <input type="text"
+            class="input-reset w-100 pa2 f4 fw5 br2 bn outline-0 | input"
+            id="title"
+            x-model="title"
+            x-on:keyup="recalc()"
+            x-on:blur="recalc(true)" />
+        </div>
+
+        <div class="mv3 mv4-l">
+          <label class="db mb2 f7 fw3 lh-block o-60"
+            for="author">
+            Author(s)
+          </label>
+          <input type="text"
+            class="input-reset w-100 pa2 f4 fw5 br2 bn outline-0 | input"
+            id="author"
+            x-model="author"
+            x-on:keyup="recalc()"
+            x-on:blur="recalc(true)" />
+        </div>
+
+        <div class="mv3 mv4-l">
+          <label class="db mb2 f7 fw3 lh-block o-60"
+            for="version">
+            Version
+          </label>
+          <input type="text"
+            class="input-reset w-100 pa2 f4 fw5 br2 bn outline-0 | input"
+            id="version"
+            x-model="version"
+            x-on:keyup="recalc()"
+            x-on:blur="recalc(true)" />
+        </div>
+
+        <div class="mv3 mv4-l">
+          <label class="db mb2 f7 fw3 lh-block o-60"
+            for="brfc">
+            BRFC
+          </label>
+          <input type="text"
+            class="input-reset w-100 pa2 code f3 fw5 br2 bn outline-0 | input"
+            id="brfc"
+            x-model="brfc"
+            x-on:focus="setTimeout(_ => $event.target.select())"
+            readonly />
+        </div>
+
+      </div>
+      
+    </div>
+    <footer class="pv3">
+      <p class="ma0 f7 fw3 tc">
+        Created by <a href="https://twitter.com/libitx" class="link fw6 underline white hover-hot-pink">Libs</a>.
+        See <a href="https://github.com/libitx/brfcgen" class="link fw6 underline white hover-hot-pink">source code</a>.
+      </p>
+    </footer>
+  </div>
+
+  <script>
+    const enc = new TextEncoder()
+
+    function brfcGen() {
+      return {
+        title: null,
+        author: null,
+        version: null,
+        brfc: null,
+
+        async recalc(force = false) {
+          if ((force || this.brfc) && this.payloadBuf().length > 0) {
+            const hash = await sha256x2(this.payloadBuf()),
+                  brfc = [...new Uint8Array(hash)].slice(26).reverse();
+            this.brfc = toHex(brfc)
+          }
+        },
+
+        /**
+         * Concatenates attributes into ArrayBuffer
+         */
+        payloadBuf() {
+          const str = (this.title || '') +
+                      (this.author || '') +
+                      (this.version || '');
+          return enc.encode(str)
+        },
+
+        /**
+         * Fired when BRFC is changed
+         */
+        onChange(val) {
+          const bg1 = val.substring(0, 6),
+                bg2 = val.substring(6);
+          document.body.style.setProperty('--bg1', '#'+bg1)
+          document.body.style.setProperty('--bg2', '#'+bg2)
+        }
+      }
+    }
+
+    /**
+     * Double sha256 hash
+     */
+    function sha256x2(buf) {
+      return crypto.subtle.digest('SHA-256', buf)
+        .then(hash => crypto.subtle.digest('SHA-256', hash))
+    }
+
+    /**
+     * Encodes typed array as hex
+     */
+    function toHex(buf) {
+      return [...new Uint8Array(buf)]
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('')
+    }
+  </script>
+  
+</body>
+</html>
