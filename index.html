@@ -3,25 +3,38 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BRFC ID Generator</title>
-  <meta name="description" content="Web page for generating BRFC (Bitcoin Request for Comment) IDs">
+  <title>BRFCgen — Easily generate BRFC IDs</title>
+  <meta name="title" content="BRFCgen — Easily generate BRFC IDs">
+  <meta name="description" content="Easily generate BRFC (Bitcoin Request for Comment) IDs for your Bitcoin Specifications">
   <meta name="keywords" content="Bitcoin, BSV, BRFC Specifications">
+  <link rel="icon" type="image/png" href="/images/favicon.png">                                                     
+
   <link rel="stylesheet"
     href="https://cdnjs.cloudflare.com/ajax/libs/tachyons/4.11.1/tachyons.min.css"
     integrity="sha512-d0v474klOFSF7qD9WDvyRxAvXaWSxCHDZdnBSZQjo8BpVr6vpjwAgqetpqkKP38DzlOzdVPaLVnzzW1Ba8wB9w=="
-    crossorigin="anonymous" />
+    crossorigin="anonymous">
   <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.8.0/dist/alpine.min.js"
     crossorigin="anonymous" defer></script>
+
   <style>
+    /*
+      A sprinkling of CSS to power light/dark mode and some snazzy and
+      (admittedly) superfluous background colour effects. I just wanted to play
+      with CSS custom properties.
+    */
+
+    html, body {
+      height: 100%;
+    }
+
     body {
       --col: #333333;
       --bg1: #F4F4F4;
       --bg2: #F4F4F4;
 
       color: var(--col, #F4F4F4);
-      background-color: var(--bg1, #F4F4F4);
+      background-color: var(--bg2, #F4F4F4);
       background-image: radial-gradient(circle, var(--bg1, #F4F4F4) 6rem, var(--bg2, #F4F4F4));
-      transition: all 500ms ease;
     }
 
     .panel {
@@ -57,10 +70,26 @@
       }
     }
   </style>
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://libitx.github.io/brfcgen/">
+  <meta property="og:title" content="BRFCgen — Easily generate BRFC IDs">
+  <meta property="og:description" content="Easily generate BRFC (Bitcoin Request for Comment) IDs for your Bitcoin Specifications">
+  <meta property="og:image" content="https://libitx.github.io/brfcgen/images/card.jpg">
+
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:url" content="https://libitx.github.io/brfcgen/">
+  <meta property="twitter:title" content="BRFCgen — Easily generate BRFC IDs">
+  <meta property="twitter:description" content="Easily generate BRFC (Bitcoin Request for Comment) IDs for your Bitcoin Specifications">
+  <meta property="twitter:image" content="https://libitx.github.io/brfcgen/images/card.jpg">
 </head>
+
 <body class="sans-serif ph3 ph4-l">
-  <div class="flex flex-column min-vh-100 mw6 center">
+  <div class="flex flex-column min-h-100 mw6 pt3 center">
     <div class="flex flex-auto flex-column justify-center">
+
       <div class="pa3 pa4-ns br4 | panel"
         x-data="brfcGen()"
         x-init="$watch('brfc', onChange)">
@@ -124,21 +153,25 @@
             x-on:focus="setTimeout(_ => $event.target.select())"
             readonly />
         </div>
-
       </div>
-      
+
     </div>
+
     <footer class="pv3">
       <p class="ma0 f7 fw3 tc">
         Created by <a href="https://twitter.com/libitx" class="link fw6 underline white hover-hot-pink">Libs</a>.
         See <a href="https://github.com/libitx/brfcgen" class="link fw6 underline white hover-hot-pink">source code</a>.
       </p>
     </footer>
+
   </div>
 
   <script>
     const enc = new TextEncoder()
 
+    /**
+     * BRFC ID Generator Alpine component
+     */
     function brfcGen() {
       return {
         title: null,
@@ -146,11 +179,14 @@
         version: null,
         brfc: null,
 
-        async recalc(force = false) {
+        /**
+         * Recalculates the BRFC ID
+         */
+        recalc(force = false) {
           if ((force || this.brfc) && this.payloadBuf().length > 0) {
-            const hash = await sha256x2(this.payloadBuf()),
-                  brfc = [...new Uint8Array(hash)].slice(26).reverse();
-            this.brfc = toHex(brfc)
+            sha256x2(this.payloadBuf())
+              .then(hash => [...new Uint8Array(hash)].slice(26).reverse())
+              .then(brfc => this.brfc = toHex(brfc))
           }
         },
 
