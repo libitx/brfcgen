@@ -202,9 +202,9 @@
          * Concatenates attributes into ArrayBuffer
          */
         payloadBuf() {
-          const str = (this.title || '') +
-                      (this.author || '') +
-                      (this.version || '');
+          const str = (this.title || '').trim() +
+                      (this.author || '').trim() +
+                      (this.version || '').trim();
           return enc.encode(str)
         },
 
